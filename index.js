@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {scene, renderer, camera, runtime, app, appManager} from 'app';
+import {scene, renderer, camera, runtime, physics, app, appManager} from 'app';
 
 const localVector = new THREE.Vector3();
 
@@ -196,7 +196,7 @@ const localVector = new THREE.Vector3();
           .applyQuaternion(shotMesh.quaternion)
           .multiplyScalar(timeDiff);
         
-        const result = geometryManager.geometryWorker.raycastPhysics(geometryManager.physics, shotMesh.position, shotMesh.quaternion);
+        const result = physics.raycast(shotMesh.position, shotMesh.quaternion);
         if (result) { // world geometry raycast
           result.point = new THREE.Vector3().fromArray(result.point);
           if (result.point.distanceTo(shotMesh.position) < localVector.length()) {
