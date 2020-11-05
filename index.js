@@ -4,6 +4,23 @@ import {scene, renderer, camera, runtime, physics, app, appManager} from 'app';
 const localVector = new THREE.Vector3();
 
 (async () => {
+  {
+    const u = 'table.glb';
+    const fileUrl = app.files['./' + u];
+    const res = await fetch(fileUrl);
+    const file = await res.blob();
+    file.name = u;
+    let mesh = await runtime.loadFile(file, {
+      optimize: false,
+    });
+    /* mesh.traverse(o => {
+      if (o.isLight) {
+        o.visible = false;
+      }
+    }); */
+    app.object.add(mesh);
+  }
+
   const u = 'weapons.glb';
   const fileUrl = app.files['./' + u];
   const res = await fetch(fileUrl);
@@ -12,13 +29,14 @@ const localVector = new THREE.Vector3();
   let mesh = await runtime.loadFile(file, {
     optimize: false,
   });
-  mesh.traverse(o => {
-    if (o.isLight) {
-      o.visible = false;
-    }
-  });
-  // scene.add(mesh);
-  app.object.add(mesh);
+  const width = 2;
+  const children = mesh.children.slice();
+  console.log('got children', children);
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i];
+    child.position.set(-width/2 + i/(children.length-1)*width, 1, 0);
+    app.object.add(child);
+  }
 
   const smg = mesh.getObjectByName('smg');
   window.addEventListener('keydown', e => {
