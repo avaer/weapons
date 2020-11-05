@@ -31,7 +31,6 @@ const localVector = new THREE.Vector3();
   });
   const width = 2;
   const children = mesh.children.slice();
-  console.log('got children', children);
   for (let i = 0; i < children.length; i++) {
     const child = children[i];
     child.position.set(-width/2 + i/(children.length-1)*width, 1, 0);
