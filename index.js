@@ -30,18 +30,33 @@ const localVector = new THREE.Vector3();
     optimize: false,
   });
   const width = 2;
-  const children = mesh.children.slice();
-  for (let i = 0; i < children.length; i++) {
-    const child = children[i];
-    child.position.set(-width/2 + i/(children.length-1)*width, 1, 0);
+  const weapons = mesh.children.slice();
+  for (let i = 0; i < weapons.length; i++) {
+    const child = weapons[i];
+    child.position.set(-width/2 + i/(weapons.length-1)*width, 1, 0);
     app.object.add(child);
   }
 
-  const smg = mesh.getObjectByName('smg');
+  const _getClosestWeapon = () => {
+    const transforms = physics.getRigTransforms();
+    const {position} = transforms[0];
+    let closestWeapon = null;
+    let closestWeaponDistance = Infinity;
+    for (const weapon of weapons) {
+      const distance = position.distanceTo(weapon.position);
+      if (distance < closestWeaponDistance) {
+        closestWeapon = weapon;
+        closestWeaponDistance = distance;
+      }
+    }
+    return closestWeapon;
+  };
+
+  // const smg = mesh.getObjectByName('smg');
   window.addEventListener('keydown', e => {
-    // console.log('got key', sword, e.keydown);
     if (e.which === 70) {
-      appManager.grab('right', smg);
+      const closestWeapon = _getClosestWeapon();
+      appManager.grab('right', closestWeapon);
     }
   });
   
@@ -191,8 +206,9 @@ const localVector = new THREE.Vector3();
   };
   window.addEventListener('mousedown', e => {
     const shotMesh = new THREE.Mesh(shotGeometry, shotMaterial);
-    shotMesh.position.copy(smg.position);
-    shotMesh.quaternion.copy(smg.quaternion);
+    const currentWeapon = appManager.getGrab('right');
+    shotMesh.position.copy(currentWeapon.position);
+    shotMesh.quaternion.copy(currentWeapon.quaternion);
     shotMesh.frustumCulled = false;
     const startTime = Date.now();
     const endTime = startTime + 5000;
