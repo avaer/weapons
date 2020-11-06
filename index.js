@@ -20,6 +20,12 @@ const localVector = new THREE.Vector3();
     }); */
     app.object.add(mesh);
   }
+  
+  const textMesh = ui.makeTextMesh('Loading', undefined, 0.2, 'center', 'middle');
+  textMesh.color = 0xCCCCCC;
+  textMesh.sync();
+  textMesh.position.y = 2;
+  app.object.add(textMesh);
 
   const u = 'weapons.glb';
   const fileUrl = app.files['./' + u];
