@@ -38,7 +38,6 @@ const localMatrix = new THREE.Matrix4();
   });
   const width = 2;
   const weapons = mesh.children.slice();
-  window.weapons = weapons;
   for (let i = 0; i < weapons.length; i++) {
     const child = weapons[i];
     child.position.set(-width/2 + i/(weapons.length-1)*width, 1, 0);
