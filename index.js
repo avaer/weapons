@@ -66,15 +66,13 @@ const localMatrix = new THREE.Matrix4();
   };
 
   let closestWeapon = null;
-  window.addEventListener('keydown', e => {
-    if (e.which === 70) {
-      if (closestWeapon) {
-        const u = app.files['weapons/' + closestWeapon.name + '.js'];
-        const transforms = physics.getRigTransforms();
-        const {position, quaternion} = transforms[0];
-        world.addObject(u, app.appId, position, quaternion); // XXX
-        // appManager.grab('right', closestWeapon);
-      }
+  window.addEventListener('click', e => {
+    if (closestWeapon) {
+      const u = app.files['weapons/' + closestWeapon.name + '.js'];
+      const transforms = physics.getRigTransforms();
+      const {position, quaternion} = transforms[0];
+      world.addObject(u, app.appId, position, quaternion); // XXX
+      // appManager.grab('right', closestWeapon);
     }
   });
 

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {scene, renderer, camera, runtime, physics, app, appManager} from 'app';
+import {scene, renderer, camera, runtime, physics, world, app, appManager} from 'app';
 
 const localVector = new THREE.Vector3();
 
@@ -15,26 +15,6 @@ const weapon = async name => {
   const width = 2;
   mesh = mesh.getObjectByName(name);
   app.object.add(mesh);
-
-  const _getClosestWeapon = () => {
-    const transforms = physics.getRigTransforms();
-    const {position} = transforms[0];
-    
-    if (position.distanceTo(mesh.position)) {
-      return mesh;
-    } else {
-      return null;
-    }
-  };
-
-  window.addEventListener('keydown', e => {
-    if (e.which === 70) {
-      const closestWeapon = _getClosestWeapon();
-      if (closestWeapon) {
-        appManager.grab('right', closestWeapon);
-      }
-    }
-  });
 
   let shots = [];
   let explosionMeshes = [];
@@ -181,52 +161,54 @@ const weapon = async name => {
     return mesh;
   };
   window.addEventListener('mousedown', e => {
-    const shotMesh = new THREE.Mesh(shotGeometry, shotMaterial);
-    const currentWeapon = appManager.getGrab('right');
-    shotMesh.position.copy(currentWeapon.position);
-    shotMesh.quaternion.copy(currentWeapon.quaternion);
-    shotMesh.frustumCulled = false;
-    const startTime = Date.now();
-    const endTime = startTime + 5000;
-    const velocity = new THREE.Vector3(0, 0, -10);
-    
-    const _explode = () => {
-      scene.remove(shotMesh);
+    const currentWeapon = world.getGrab('right');
+    if (currentWeapon === app.object) {
+      const shotMesh = new THREE.Mesh(shotGeometry, shotMaterial);
+      shotMesh.position.copy(currentWeapon.position);
+      shotMesh.quaternion.copy(currentWeapon.quaternion);
+      shotMesh.frustumCulled = false;
+      const startTime = Date.now();
+      const endTime = startTime + 5000;
+      const velocity = new THREE.Vector3(0, 0, -10);
+      
+      const _explode = () => {
+        scene.remove(shotMesh);
 
-      const explosionMesh = _makeExplosionMesh();
-      explosionMesh.position.copy(shotMesh.position);
-      explosionMesh.quaternion.copy(shotMesh.quaternion);
-      scene.add(explosionMesh);
-      explosionMeshes.push(explosionMesh);
-    };
-    shotMesh.update = (now, timeDiff) => {
-      if (now < endTime) {
-        localVector.copy(velocity)
-          .applyQuaternion(shotMesh.quaternion)
-          .multiplyScalar(timeDiff);
-        
-        const result = physics.raycast(shotMesh.position, shotMesh.quaternion);
-        if (result) { // world geometry raycast
-          result.point = new THREE.Vector3().fromArray(result.point);
-          if (result.point.distanceTo(shotMesh.position) < localVector.length()) {
-            _explode();
-            return false;
+        const explosionMesh = _makeExplosionMesh();
+        explosionMesh.position.copy(shotMesh.position);
+        explosionMesh.quaternion.copy(shotMesh.quaternion);
+        scene.add(explosionMesh);
+        explosionMeshes.push(explosionMesh);
+      };
+      shotMesh.update = (now, timeDiff) => {
+        if (now < endTime) {
+          localVector.copy(velocity)
+            .applyQuaternion(shotMesh.quaternion)
+            .multiplyScalar(timeDiff);
+          
+          const result = physics.raycast(shotMesh.position, shotMesh.quaternion);
+          if (result) { // world geometry raycast
+            result.point = new THREE.Vector3().fromArray(result.point);
+            if (result.point.distanceTo(shotMesh.position) < localVector.length()) {
+              _explode();
+              return false;
+            }
+            /* raycastChunkSpec.normal = new THREE.Vector3().fromArray(raycastChunkSpec.normal);
+            raycastChunkSpec.objectPosition = new THREE.Vector3().fromArray(raycastChunkSpec.objectPosition);
+            raycastChunkSpec.objectQuaternion = new THREE.Quaternion().fromArray(raycastChunkSpec.objectQuaternion);
+            cubeMesh.position.copy(raycastChunkSpec.point); */
           }
-          /* raycastChunkSpec.normal = new THREE.Vector3().fromArray(raycastChunkSpec.normal);
-          raycastChunkSpec.objectPosition = new THREE.Vector3().fromArray(raycastChunkSpec.objectPosition);
-          raycastChunkSpec.objectQuaternion = new THREE.Quaternion().fromArray(raycastChunkSpec.objectQuaternion);
-          cubeMesh.position.copy(raycastChunkSpec.point); */
+          
+          shotMesh.position.add(localVector);
+          return true;
+        } else {
+          _explode();
+          return false;
         }
-        
-        shotMesh.position.add(localVector);
-        return true;
-      } else {
-        _explode();
-        return false;
-      }
-    };
-    scene.add(shotMesh);
-    shots.push(shotMesh);
+      };
+      scene.add(shotMesh);
+      shots.push(shotMesh);
+    }
   });
   
   let lastTimestamp = performance.now();
