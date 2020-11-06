@@ -24,7 +24,6 @@ const localMatrix = new THREE.Matrix4();
   
   const textMesh = ui.makeTextMesh('Loading', undefined, 0.2, 'center', 'middle');
   textMesh.color = 0xCCCCCC;
-  textMesh.sync();
   textMesh.position.y = 2;
   app.object.add(textMesh);
 
