@@ -3,6 +3,29 @@ import {scene, renderer, camera, runtime, physics, world, app, appManager} from 
 
 const localVector = new THREE.Vector3();
 
+const _deinterleaveMeshGeometry = mesh => {
+  const {geometry} = mesh;
+  console.log('got geometry', geometry);
+  const g = new THREE.BufferGeometry();
+  for (const key in geometry.attributes) {
+    if (key === 'position') {
+      const positions = new Float32Array(8 * 1024 * 1024);
+      let positionIndex = 0;
+      for (let i = 0; i < geometry.index.array.length; i++) {
+        localVector.fromArray(geometry.attributes.position.array, geometry.index.array[i] * geometry.attributes.position.data.stride)
+          .applyMatrix4(mesh.matrixWorld)
+          .toArray(positions, positionIndex);
+        positionIndex += 3;
+      }
+      g.setAttribute('position', new THREE.BufferAttribute(positions.slice(0, positionIndex), 3));
+    // } else if (key === 'normal') { // XXX fix this
+    } else {
+      g.setAttribute(key, geometry.attributes[key]);
+    }
+  }
+  return new THREE.Mesh(g, mesh.material);
+};
+
 const weapon = async name => {
   const u = 'weapons.glb';
   const fileUrl = app.files['../' + u];
@@ -13,7 +36,31 @@ const weapon = async name => {
     optimize: false,
   });
   const width = 2;
-  mesh = mesh.getObjectByName(name);
+  mesh = mesh.getObjectByName(name)
+    .children[0];
+  mesh.updateMatrixWorld();
+
+  const deinterleavedMesh = _deinterleaveMeshGeometry(mesh);
+  const physicsBuffer = physics.cookConvexGeometry(deinterleavedMesh);
+  const physicsId = physics.addCookedConvexGeometry(physicsBuffer, app.object.position, app.object.quaternion);
+  
+  /* let updateIndex = 0;
+  const physicsCube = new THREE.Mesh(new THREE.BoxBufferGeometry(1, 1, 1), new THREE.MeshPhongMaterial({
+    color: 0xFF0000,
+  }));
+  scene.add(physicsCube);
+  const physicsCubePhysicsId = physics.addBoxGeometry(new THREE.Vector3(0, 5, 0), new THREE.Quaternion(), new THREE.Vector3(0.5, 0.5, 0.5), true);
+
+  renderer.setAnimationLoop((timestamp, frame) => {
+    if ((updateIndex % 100) === 0) {
+      physics.setPhysicsTransform(physicsCubePhysicsId, new THREE.Vector3(0, 10, 0), new THREE.Quaternion(0, 0, 0, 1));
+    }
+    const {position, quaternion} = physics.getPhysicsTransform(physicsCubePhysicsId);
+    physicsCube.position.copy(position);
+    physicsCube.quaternion.copy(quaternion);
+    updateIndex++;
+  }); */
+  
   app.object.add(mesh);
 
   let shots = [];
@@ -162,7 +209,8 @@ const weapon = async name => {
   };
   window.addEventListener('mousedown', e => {
     const currentWeapon = world.getGrab('right');
-    if (currentWeapon === app.object) {
+    const grabbed = currentWeapon === app.object;
+    if (grabbed) {
       const shotMesh = new THREE.Mesh(shotGeometry, shotMaterial);
       shotMesh.position.copy(currentWeapon.position);
       shotMesh.quaternion.copy(currentWeapon.quaternion);
@@ -212,11 +260,26 @@ const weapon = async name => {
   });
   
   let lastTimestamp = performance.now();
+  let lastGrabbed = false;
   renderer.setAnimationLoop((timestamp, frame) => {
     timestamp = timestamp || performance.now();
     const timeDiff = Math.min((timestamp - lastTimestamp) / 1000, 0.05);
     lastTimestamp = timestamp;
     const now = Date.now();
+    
+    const currentWeapon = world.getGrab('right');
+    const grabbed = currentWeapon === app.object;
+    // if (grabbed) {
+      const {position, quaternion} = physics.getPhysicsTransform(physicsId);
+      app.object.position.copy(position);
+      app.object.quaternion.copy(quaternion);
+    // }    
+    if (grabbed && !lastGrabbed) {
+      
+    } else if (lastGrabbed && !grabbed) {
+      
+    }
+    lastGrabbed = grabbed;
 
     shots = shots.filter(shot => shot.update(now, timeDiff));
     explosionMeshes = explosionMeshes.filter(explosionMesh => {
