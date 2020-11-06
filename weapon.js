@@ -43,6 +43,7 @@ const weapon = async name => {
   const physicsBuffer = physics.cookConvexGeometry(deinterleavedMesh);
   const physicsId = physics.addCookedConvexGeometry(physicsBuffer, app.object.position, app.object.quaternion);
   physics.disableGeometry(physicsId);
+  physics.disableGeometryQueries(physicsId);
   let physicsEnabled = false;
 
   app.object.add(mesh);
