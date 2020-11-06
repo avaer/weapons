@@ -1,28 +1,11 @@
 import * as THREE from 'three';
-import {scene, renderer, camera, runtime, world, physics, app, appManager} from 'app';
+import {scene, renderer, camera, runtime, physics, app, appManager} from 'app';
 
 const localVector = new THREE.Vector3();
 
-(async () => {
-  {
-    const u = 'table.glb';
-    const fileUrl = app.files['./' + u];
-    const res = await fetch(fileUrl);
-    const file = await res.blob();
-    file.name = u;
-    let mesh = await runtime.loadFile(file, {
-      optimize: false,
-    });
-    /* mesh.traverse(o => {
-      if (o.isLight) {
-        o.visible = false;
-      }
-    }); */
-    app.object.add(mesh);
-  }
-
+const weapon = async name => {
   const u = 'weapons.glb';
-  const fileUrl = app.files['./' + u];
+  const fileUrl = app.files['../' + u];
   const res = await fetch(fileUrl);
   const file = await res.blob();
   file.name = u;
@@ -30,41 +13,29 @@ const localVector = new THREE.Vector3();
     optimize: false,
   });
   const width = 2;
-  const weapons = mesh.children.slice();
-  for (let i = 0; i < weapons.length; i++) {
-    const child = weapons[i];
-    child.position.set(-width/2 + i/(weapons.length-1)*width, 1, 0);
-    app.object.add(child);
-  }
+  mesh = mesh.getObjectByName(name);
+  app.object.add(mesh);
 
   const _getClosestWeapon = () => {
     const transforms = physics.getRigTransforms();
     const {position} = transforms[0];
-    let closestWeapon = null;
-    let closestWeaponDistance = Infinity;
-    for (const weapon of weapons) {
-      const distance = position.distanceTo(weapon.position);
-      if (distance < closestWeaponDistance) {
-        closestWeapon = weapon;
-        closestWeaponDistance = distance;
-      }
+    
+    if (position.distanceTo(mesh.position)) {
+      return mesh;
+    } else {
+      return null;
     }
-    return closestWeapon;
   };
 
   window.addEventListener('keydown', e => {
     if (e.which === 70) {
       const closestWeapon = _getClosestWeapon();
       if (closestWeapon) {
-        const u = app.files['weapons/' + closestWeapon.name + '.js'];
-        const transforms = physics.getRigTransforms();
-        const {position, quaternion} = transforms[0];
-        world.addObject(u, app.appId, position, quaternion); // XXX
-        // appManager.grab('right', closestWeapon);
+        appManager.grab('right', closestWeapon);
       }
     }
   });
-  
+
   let shots = [];
   let explosionMeshes = [];
   const shotGeometry = new THREE.BoxBufferGeometry(0.01, 0.01, 0.01);
@@ -276,4 +247,5 @@ const localVector = new THREE.Vector3();
       }
     });
   });
-})();
+};
+export default weapon;
