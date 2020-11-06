@@ -5,7 +5,6 @@ const localVector = new THREE.Vector3();
 
 const _deinterleaveMeshGeometry = mesh => {
   const {geometry} = mesh;
-  console.log('got geometry', geometry);
   const g = new THREE.BufferGeometry();
   for (const key in geometry.attributes) {
     if (key === 'position') {
@@ -43,24 +42,9 @@ const weapon = async name => {
   const deinterleavedMesh = _deinterleaveMeshGeometry(mesh);
   const physicsBuffer = physics.cookConvexGeometry(deinterleavedMesh);
   const physicsId = physics.addCookedConvexGeometry(physicsBuffer, app.object.position, app.object.quaternion);
-  
-  /* let updateIndex = 0;
-  const physicsCube = new THREE.Mesh(new THREE.BoxBufferGeometry(1, 1, 1), new THREE.MeshPhongMaterial({
-    color: 0xFF0000,
-  }));
-  scene.add(physicsCube);
-  const physicsCubePhysicsId = physics.addBoxGeometry(new THREE.Vector3(0, 5, 0), new THREE.Quaternion(), new THREE.Vector3(0.5, 0.5, 0.5), true);
+  physics.disableGeometry(physicsId);
+  let physicsEnabled = false;
 
-  renderer.setAnimationLoop((timestamp, frame) => {
-    if ((updateIndex % 100) === 0) {
-      physics.setPhysicsTransform(physicsCubePhysicsId, new THREE.Vector3(0, 10, 0), new THREE.Quaternion(0, 0, 0, 1));
-    }
-    const {position, quaternion} = physics.getPhysicsTransform(physicsCubePhysicsId);
-    physicsCube.position.copy(position);
-    physicsCube.quaternion.copy(quaternion);
-    updateIndex++;
-  }); */
-  
   app.object.add(mesh);
 
   let shots = [];
@@ -269,17 +253,23 @@ const weapon = async name => {
     
     const currentWeapon = world.getGrab('right');
     const grabbed = currentWeapon === app.object;
-    // if (grabbed) {
+    if (grabbed && !lastGrabbed) {
+      physics.disableGeometry(physicsId);
+      physicsEnabled = false;
+    } else if (lastGrabbed && !grabbed) {
+      physics.enableGeometry(physicsId);
+      physicsEnabled = true;
+    }
+    lastGrabbed = grabbed;
+
+    if (grabbed) {
+      physics.setPhysicsTransform(physicsId, app.object.position, app.object.quaternion);
+    }
+    if (physicsEnabled) {
       const {position, quaternion} = physics.getPhysicsTransform(physicsId);
       app.object.position.copy(position);
       app.object.quaternion.copy(quaternion);
-    // }    
-    if (grabbed && !lastGrabbed) {
-      
-    } else if (lastGrabbed && !grabbed) {
-      
     }
-    lastGrabbed = grabbed;
 
     shots = shots.filter(shot => shot.update(now, timeDiff));
     explosionMeshes = explosionMeshes.filter(explosionMesh => {
