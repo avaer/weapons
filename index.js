@@ -1,7 +1,8 @@
 import * as THREE from 'three';
-import {scene, renderer, camera, runtime, world, physics, app, appManager} from 'app';
+import {scene, renderer, camera, runtime, world, physics, ui, app, appManager} from 'app';
 
 const localVector = new THREE.Vector3();
+const localMatrix = new THREE.Matrix4();
 
 (async () => {
   {
@@ -37,6 +38,7 @@ const localVector = new THREE.Vector3();
   });
   const width = 2;
   const weapons = mesh.children.slice();
+  window.weapons = weapons;
   for (let i = 0; i < weapons.length; i++) {
     const child = weapons[i];
     child.position.set(-width/2 + i/(weapons.length-1)*width, 1, 0);
@@ -46,7 +48,7 @@ const localVector = new THREE.Vector3();
   const _getClosestWeapon = () => {
     const transforms = physics.getRigTransforms();
     const position = transforms[0].position.clone()
-      .applyMatrix4(new THREE.Matrix4().getInverse(app.object.matrixWorld));
+      .applyMatrix4(localMatrix.getInverse(app.object.matrixWorld));
     let closestWeapon = null;
     let closestWeaponDistance = Infinity;
     for (const weapon of weapons) {
@@ -56,12 +58,16 @@ const localVector = new THREE.Vector3();
         closestWeaponDistance = distance;
       }
     }
-    return closestWeapon;
+    if (closestWeaponDistance < 0.5) {
+      return closestWeapon;
+    } else {
+      return null;
+    }
   };
 
+  let closestWeapon = null;
   window.addEventListener('keydown', e => {
     if (e.which === 70) {
-      const closestWeapon = _getClosestWeapon();
       if (closestWeapon) {
         const u = app.files['weapons/' + closestWeapon.name + '.js'];
         const transforms = physics.getRigTransforms();
@@ -271,6 +277,11 @@ const localVector = new THREE.Vector3();
     const timeDiff = Math.min((timestamp - lastTimestamp) / 1000, 0.05);
     lastTimestamp = timestamp;
     const now = Date.now();
+
+    closestWeapon = _getClosestWeapon();
+    for (const weapon of weapons) {
+      weapon.scale.setScalar(weapon === closestWeapon ? 2 : 1);
+    }
 
     shots = shots.filter(shot => shot.update(now, timeDiff));
     explosionMeshes = explosionMeshes.filter(explosionMesh => {
