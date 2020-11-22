@@ -22,7 +22,7 @@ const localMatrix = new THREE.Matrix4();
     app.object.add(mesh);
   }
   
-  const textMesh = ui.makeTextMesh('Loading', undefined, 0.2, 'center', 'middle');
+  const textMesh = ui.makeTextMesh('Toys', undefined, 0.2, 'center', 'middle');
   textMesh.color = 0xCCCCCC;
   textMesh.position.y = 2;
   app.object.add(textMesh);
