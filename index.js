@@ -46,7 +46,7 @@ const localMatrix = new THREE.Matrix4();
   const _getClosestWeapon = () => {
     const transforms = physics.getRigTransforms();
     const position = transforms[0].position.clone()
-      .applyMatrix4(localMatrix.getInverse(app.object.matrixWorld));
+      .applyMatrix4(localMatrix.copy(app.object.matrixWorld).invert());
     let closestWeapon = null;
     let closestWeaponDistance = Infinity;
     for (const weapon of weapons) {
