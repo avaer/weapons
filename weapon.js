@@ -193,7 +193,7 @@ const weapon = async name => {
     return mesh;
   };
   window.addEventListener('mousedown', e => {
-    const currentWeapon = world.getGrab('right');
+    const currentWeapon = appManager.getGrab('right');
     const grabbed = currentWeapon === app.object;
     if (grabbed) {
       const shotMesh = new THREE.Mesh(shotGeometry, shotMaterial);
@@ -252,7 +252,7 @@ const weapon = async name => {
     lastTimestamp = timestamp;
     const now = Date.now();
     
-    const currentWeapon = world.getGrab('right');
+    const currentWeapon = appManager.getGrab('right');
     const grabbed = currentWeapon === app.object;
     if (grabbed && !lastGrabbed) {
       physics.disableGeometry(physicsId);
